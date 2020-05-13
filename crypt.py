@@ -25,11 +25,17 @@ for y in X[:7]:
     for x in X[1:]:
         Z.append([x, y])
 del Z[44:]
-INFO = "Program encrypts a message into a selected image (PNG) and creates\n" \
-       "a new image with the message. You can also decrypt an existing\n" \
-       "message from an image if you have the original image as well.\n" \
-       "If there's no message encrypted or the image pair is wrong,\n" \
-       "proogram returns an error message. Quit by entering 'Q' or 'q'.\n"
+INFO = "- Program encrypts (E) a message into a selected image and creates\n" \
+       "  a new image with the message. You can also decrypt (D) an existing\n" \
+       "  message from an image if you have the original image as well.\n" \
+       "  Quit by entering 'Q' or 'q'."
+INFO2 = "- Legal characters are basic alphabets, numbers, white space and\n" \
+        "  [, . : ( ) ä ö].\n" \
+        "- The original image should be PNG_image. Program will convert\n" \
+        "  to PNG if not. Same for the encrypted image.\n" \
+        "- If given image is not found, program will print an error\n" \
+        "  message both while encrypting and decrypting.\n" \
+        "- After successful decryption, program deletes the encrypted image.\n"
 
 
 def read_pic_io(vrs):
@@ -266,16 +272,35 @@ def decrypt():
             continue
 
 
-def menu():
+def give_info():
     print(INFO)
+
     while True:
-        choice = input("Encrypt (E) / Decrypt (D) / Quit (Q): ")
+        more = input("More info? (Y/N): ")
+        if more == "Y" or more == "y":
+            print(INFO2)
+            return
+
+        elif more == "N" or more == "n":
+            print()
+            return
+
+        else:
+            continue
+
+
+def menu():
+    while True:
+        choice = input("Encrypt (E) / Decrypt (D) / Info (I) / Quit (Q): ")
 
         if choice == "E" or choice == "e":
             encrypt()
 
         elif choice == "D" or choice == "d":
             decrypt()
+
+        elif choice == "I" or choice == "i":
+            give_info()
 
         elif choice == "Q" or choice == "q":
             print("- Goodbye.")
