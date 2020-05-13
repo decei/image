@@ -28,7 +28,7 @@ del Z[44:]
 INFO = "- Program encrypts (E) a message into a selected image and creates\n" \
        "  a new image with the message. You can also decrypt (D) an existing\n" \
        "  message from an image if you have the original image as well.\n" \
-       "  Quit by entering 'Q' or 'q'."
+       "  Quit by entering 'Q' or 'q'.\n"
 INFO2 = "- Legal characters are basic alphabets, numbers, white space and\n" \
         "  [, . : ( ) ä ö].\n" \
         "- The original image should be PNG_image. Program will convert\n" \
@@ -55,7 +55,7 @@ def read_pic_io(vrs):
             pic.save(pic_name)
             pic.close()
 
-        pic = imageio.imread(pic_name)
+        pic = imageio.imread(pic_name)      # TODO
 
         if vrs == 2:
             return pic, pic_name
@@ -79,15 +79,15 @@ def setup_io(vrs):
 
         pixels_x = []
         pixels_y = []
-        x = 0
-        y = 0
+        px = 0
+        py = 0
 
-        while x < width - 1:
-            pixels_x.append(x)
-            x += 50
-        while y < height:
-            pixels_y.append(y)
-            y += 50
+        while px < width - 1:
+            pixels_x.append(px)
+            px += 50
+        while py < height:
+            pixels_y.append(py)
+            py += 50
 
         if vrs == 1:
             return pic, pixels_x, pixels_y
@@ -112,7 +112,11 @@ def change_pix(pic, px, py, binx):
 
 
 def save_new(new_pic):
-    new_pic_name = input("Write the name of the new image: ")
+    new_pic_name = ""
+
+    while new_pic_name == "" or new_pic_name == " ":
+        new_pic_name = input("Write the name of the new image: ")
+
     if not new_pic_name.endswith('.png'):
         parts = new_pic_name.split('.')
         new_pic_name = parts[0] + '.png'
@@ -129,7 +133,11 @@ def to_code(char):
 
 # Pyydä ja käännä haluttu viesti, palauta käännetty lista
 def get_msg():
-    msg = input("Write the message to be encrypted:\n")
+    msg = input("Write the message to be encrypted: ")
+
+    if msg == "":
+        return
+
     listed_msg = list(msg.lower())
     encrypted = []
 
@@ -192,7 +200,9 @@ def compare(enc_pic, og_pic, px, py):
 # Salaa viesti
 def encrypt():
     # Pyydetään salattava teksti ja muutetaan binäärimuotoon
-    encrypted = get_msg()
+    encrypted = []
+    while True and not encrypted:
+        encrypted = get_msg()
 
     while True:
         # Luodaan kuva ja listat pikseleistä, joita muokataan
@@ -269,6 +279,8 @@ def decrypt():
             return
 
         except TypeError:
+            continue
+        except ValueError:
             continue
 
 
