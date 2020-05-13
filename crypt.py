@@ -1,4 +1,4 @@
-# desei - Viestin salaus kuvan pikseleitä muuttamalla
+# decei - Viestin salaus kuvan pikseleitä muuttamalla
 # versio 2.0 - imageio
 
 # 12.5.2020
@@ -18,18 +18,18 @@ from PIL import Image
 ALPH = list(string.ascii_lowercase)
 for z in range(0, 10):
     ALPH.append(str(z))
-ALPH.append(" ")
+ALPH.extend([" ", ",", ".", ":", "(", ")", "ä", "ö"])
 X = ['000', '001', '010', '011', '100', '101', '110', '111']
 Z = []
-for y in X[:6]:
+for y in X[:7]:
     for x in X[1:]:
         Z.append([x, y])
-del Z[37:]
-INFO = "Program encrypts a message to a selected PNG-image and creates\n" \
+del Z[44:]
+INFO = "Program encrypts a message into a selected image (PNG) and creates\n" \
        "a new image with the message. You can also decrypt an existing\n" \
        "message from an image if you have the original image as well.\n" \
-       "If there's no message encrypted or the format is wrong, program\n" \
-       "returns an empty message. Quit by entering 'Q' or 'q'.\n"
+       "If there's no message encrypted or the image pair is wrong,\n" \
+       "proogram returns an error message. Quit by entering 'Q' or 'q'.\n"
 
 
 def read_pic_io(vrs):
@@ -129,7 +129,8 @@ def get_msg():
 
     for i in range(0, len(listed_msg)):
         if listed_msg[i] not in ALPH:
-            print("- Unknown character. Use only basic alphabets and numbers.")
+            print("- Unknown character. Use only basic alphabets, numbers and"
+                  "[, . : ( )].")
             return get_msg()
 
         binar = to_code(listed_msg[i])
