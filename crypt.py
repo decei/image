@@ -1,10 +1,9 @@
-# decei - Viestin salaus kuvan pikseleitä muuttamalla
-# versio 3.0 - imageio, olio
+# decei - Encryption / decryption of a meesage by changing the pixels.
+# Version 3.0 - imageio, objects
 
-# 13.5.2020
-# Kryptaus ok, kestää pitkään
-# TODO : RuntimeWarning kun väärä kuvapari
-
+# 14.5.2020
+# Encrypting quite time consuming
+# Set a quality limit for the image?
 
 import string
 import os
@@ -137,16 +136,18 @@ class Picture:
 
 def to_code(char):
     """Convert the given character to corresponding binary code ([str])."""
-    ix = ALPH.index(char)
-    return Z[ix]
+    try:
+        return Z[ALPH.index(char)]
+    except ValueError:
+        print("- Unknown character. Use only basic alphabets, numbers and "
+              "[, . : ( )].")
+        return []
 
 
 def to_text(bin_list):
     """Convert the given binary code to corresponding character (str)."""
-    bin_1 = bin_list[0]
-    bin_2 = bin_list[1]
     try:
-        return ALPH[Z.index([bin_1, bin_2])]
+        return ALPH[Z.index([bin_list[0], bin_list[1]])]
     except ValueError:
         print("- Decryption failure. Wrong decryption code or image pair.\n")
         return "?"
@@ -162,15 +163,30 @@ def get_msg():
     encrypted = []
 
     for i in range(0, len(listed_msg)):
-        if listed_msg[i] not in ALPH:
-            print("- Unknown character. Use only basic alphabets, numbers and"
-                  "[, . : ( )].")
-            return get_msg()
-
         binar = to_code(listed_msg[i])
+
+        if not binar:
+            return encrypted == []
+
         encrypted.append(binar)
 
     return encrypted
+
+
+def compare(enc_pix, og_pix):
+    pxl_enc = list(enc_pix)
+    pxl_og = list(og_pix)
+
+    if pxl_enc == pxl_og:
+        pxl_str = "000"
+
+    else:
+        pxl_str = ""
+        for j in range(3):
+            diff = int(pxl_enc[j]) - int(pxl_og[j])
+            pxl_str += str(diff)
+
+    return pxl_str
 
 
 def are_same(og, enc):
@@ -241,22 +257,6 @@ def encrypt():
         return
 
 
-def compare(enc_pix, og_pix):
-    pxl_enc = list(enc_pix)
-    pxl_og = list(og_pix)
-
-    if pxl_enc == pxl_og:
-        pxl_str = "000"
-
-    else:
-        pxl_str = ""
-        for j in range(3):
-            diff = int(pxl_enc[j]) - int(pxl_og[j])
-            pxl_str += str(diff)
-
-    return pxl_str
-
-
 def decrypt():
     msg = ""
     while True:
@@ -303,7 +303,7 @@ def decrypt():
             os.remove(enc_pic.get_name())
             enc_pic.delete()
             og_pic.delete()
-            print("The decrypted message:\n", msg, sep="")
+            print("- The decrypted message:\n", msg, sep="")
             print("- Decryption success.\n")
             return
 
