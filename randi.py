@@ -1,6 +1,7 @@
 import imageio
 import numpy
 import string
+import os
 
 
 ALPH = list(string.ascii_lowercase)
@@ -16,7 +17,6 @@ del Z[44:]
 
 
 def to_code(char):
-    """Convert the given character to corresponding binary code ([str])."""
     try:
         return Z[ALPH.index(char)]
     except ValueError:
@@ -25,24 +25,31 @@ def to_code(char):
         return []
 
 
+def to_text(bin_list):
+    try:
+        return ALPH[Z.index([bin_list[0], bin_list[1]])]
+    except ValueError:
+        print("- Decryption failure. Wrong decryption code.\n")
+        return "?"
+
+
 def get_msg():
     msg = input("Write the message to be encrypted: ")
-
-    if msg == "":
-        return
-
-    listed_msg = list(msg.lower())
     encrypted = []
 
-    for i in range(0, len(listed_msg)):
-        binar = to_code(listed_msg[i])
+    if msg != "":
+        listed_msg = list(msg.lower())
 
-        if not binar:
-            return encrypted == []
+        for i in range(0, len(listed_msg)):
+            binar = to_code(listed_msg[i])
 
-        encrypted.append(binar)
+            if not binar:
+                encrypted = []
+                break
 
-    return encrypted            # Palauttaa [str, str]
+            encrypted.append(binar)
+
+    return encrypted                      # Palauttaa [str, str]
 
 
 def change_pix(pic_pix, binx):
@@ -54,73 +61,175 @@ def change_pix(pic_pix, binx):
     return numpy.array(col_list)
 
 
-def encrypt():  # TODO
+def ask_details(vrs):
+    try:
+        seed = int(input("Enter the code number: "))
+
+        if vrs == 1:
+            height = int(input("Enter the height of the image: "))
+            width = int(input("Enter the width of the image: "))
+
+            if seed >= 0 and height > 0 and width > 0:
+                return seed, height, width
+
+        if vrs == 2:
+            if seed >= 0:
+                return seed
+
+        raise ValueError
+
+    except ValueError:
+        print("- Values must be positive numbers.")
+        return ask_details(vrs)
+
+
+def write_matrix(seed, msg_pix, h, w):
+    pic_name = ""
+    numpy.random.seed(seed)
+    rnd_pix = numpy.random.randint(1, 128, size=(h, w, 3)).astype(numpy.uint8)
+
+    enc_pix = numpy.multiply(rnd_pix, msg_pix)
+    enc_pix = numpy.add(rnd_pix, enc_pix)
+
+    while pic_name == "" or pic_name == " ":
+        pic_name = input("Enter the name of the encrypted image: ")
+
+    if not pic_name.endswith('.png'):
+        print("- Sorry, giving you a PNG-version...")
+        parts = pic_name.split('.')
+        pic_name = parts[0] + '.png'
+
+    print("Encrypting...")
+    imageio.imwrite(pic_name, enc_pix.astype(numpy.uint8))
+
+
+def encrypt():
     encrypted = []
     while True and not encrypted:
         encrypted = get_msg()
 
-    seed = int(input("Enter code number: "))       # TODO: lisää tarkistus onko
+    [seed, height, width] = ask_details(1)
+
+    if height * (width - 1) / 4 < len(encrypted):
+        print("Image size too small for the message.\n")
+        return
+
+    msg_pix = numpy.zeros((height, width, 3))
+
     done = False
+    j = 0
+    i = 0
 
-    numpy.random.seed(seed)
-    rnd_pix = numpy.random.randint(256, size=(10, 10, 3)).astype(numpy.uint8)
-    mesg_pix = numpy.ones((10, 10, 3))
-
-    for j in range(mesg_pix.shape[0]):
-        if j % 2 != 0:
-            continue
-
-        for i in range(mesg_pix.shape[1]):
-            if i % 2 != 0:
-                continue
+    while j <= height and not done:
+        while i < width and not done:
 
             bin_1 = encrypted[0][0]
             bin_2 = encrypted[0][1]
 
-            mesg_pix[j, i] = change_pix(mesg_pix[j, i], bin_1)
+            msg_pix[j, i] = change_pix(msg_pix[j, i], bin_1)
 
             if bin_2 != '000':
-                mesg_pix[j, i + 1] = change_pix(mesg_pix[j, i + 1],
-                                                bin_2)
+                msg_pix[j, i + 1] = change_pix(msg_pix[j, i + 1], bin_2)
 
             del encrypted[0]
 
             if len(encrypted) == 0:
                 done = True
+
+            i += 2
+
+        j += 2
+        i = 0
+
+    write_matrix(seed, msg_pix, height, width)
+
+    print("- Encryption success.\n", sep="")
+    return
+
+
+def read_matrix(seed, pix, h, w):
+    numpy.random.seed(seed)
+    rnd_pix = numpy.random.randint(1, 128, size=(h, w, 3)).astype(numpy.uint8)
+
+    dec_pix = numpy.subtract(pix, rnd_pix)
+    dec_pix = numpy.divide(dec_pix, rnd_pix)
+    return dec_pix
+
+
+def open_image():
+    pic_name = ""
+
+    while pic_name == "" or pic_name == " ":
+        pic_name = input("Enter the name of the encrypted image: ")
+
+    try:
+        pix = imageio.imread(pic_name)
+        return pix
+
+    except (ValueError, FileNotFoundError):
+        print("- File not found.")
+        open_image()
+
+
+def to_str(pix):
+    p_str = ""
+    for i in range(3):
+        p_str += str(int(pix[i]))
+    return p_str
+
+
+def decrypt():
+    msg = ""
+
+    seed = ask_details(2)
+
+    pix = open_image()
+    height = pix.shape[0]
+    width = pix.shape[1]
+
+    print("Decrypting...")
+    dec_pix = read_matrix(seed, pix, height, width)
+
+    done = False
+    i = 0
+    j = 0
+
+    while j <= height and not done:
+        while i < width and not done:
+
+            px_1 = to_str(list(dec_pix[j, i]))
+
+            if px_1 == "000":
+                done = True
                 break
 
-        if done:
-            break
+            px_2 = to_str(list(dec_pix[j, i + 1]))
 
-    enc_pix_1 = numpy.multiply(rnd_pix, mesg_pix)
-    enc_pix_2 = numpy.divide(enc_pix_1, seed)
+            charx = to_text([px_1, px_2])
+            if charx == "?":
+                return
 
-    pic_name = input("Enter the name of the encrypted image: ")
-    imageio.imwrite(pic_name, enc_pix_2.astype(numpy.uint8))
+            msg += charx
+            i += 2
 
-    #while are_same(pic, new_pic):
-        #new_pic = Picture(4, new_pic)
+        j += 2
+        i = 0
 
-    #print("- Encryption success. To be found from ", new_pic.get_name()
-          #, ".\n", sep="")
+    print("- The decrypted message:\n", msg, sep="")
+    print("- Decryption success.\n")
 
-    #pic.delete()
-    #new_pic.delete()
-    #return
+    return
 
 
 def menu():
     while True:
-        choice = input("Encrypt (E) / Decrypt (D) / Info (I) / Quit (Q): ")
+        choice = input("Encrypt (E) / Decrypt (D) / Quit (Q): ")
 
         if choice == "E" or choice == "e":
             encrypt()
 
         elif choice == "D" or choice == "d":
             decrypt()
-
-        elif choice == "I" or choice == "i":
-            give_info()
 
         elif choice == "Q" or choice == "q":
             print("- Goodbye.")

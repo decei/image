@@ -1,5 +1,5 @@
 # decei - Encryption / decryption of a meesage by changing the pixels.
-# Version 3.1 - imageio, objects, pixels to landscape
+# Version 3.1 - imageio, objects, processed pixels to landscape
 
 # 14.5.2020
 # Encrypting quite time consuming
@@ -154,6 +154,7 @@ def to_text(bin_list):
 
 
 def get_msg():
+    """Ask for a message and return it in binary form ([[str, str], ...])"""
     msg = input("Write the message to be encrypted: ")
 
     if msg == "":
@@ -174,6 +175,7 @@ def get_msg():
 
 
 def compare(enc_pix, og_pix):
+    """Compare the two given pixels and return the difference (str)."""
     pxl_enc = list(enc_pix)
     pxl_og = list(og_pix)
 
@@ -190,6 +192,7 @@ def compare(enc_pix, og_pix):
 
 
 def are_same(og, enc):
+    """Check if the two Picture-objects are the same (bool)."""
     if og.get_name() == enc.get_name():
         print("- The encrypted/decrypted image can't be the same as "
               "the original.")
@@ -199,6 +202,7 @@ def are_same(og, enc):
 
 
 def change_pix(pix, binx):
+    """Change the wanted pixel by given amount (numpy.array(3))."""
     col_list = list(pix)
 
     for j in range(3):
@@ -208,6 +212,7 @@ def change_pix(pix, binx):
 
 
 def encrypt():
+    """Perform the encryption when called."""
     encrypted = []
     while True and not encrypted:
         encrypted = get_msg()
@@ -249,8 +254,8 @@ def encrypt():
         while are_same(pic, new_pic):
             new_pic = Picture(4, new_pic)
 
-        print("- Encryption success. To be found from ", new_pic.get_name()
-              , ".\n", sep="")
+        print("- Encryption success. To be found from ", new_pic.get_name(),
+              ".\n", sep="")
 
         pic.delete()
         new_pic.delete()
@@ -258,6 +263,7 @@ def encrypt():
 
 
 def decrypt():
+    """Perform the decryption when called."""
     msg = ""
     while True:
         enc_pic = Picture(2, None)
@@ -309,6 +315,7 @@ def decrypt():
 
 
 def give_info():
+    """Print the info when called."""
     print(INFO)
 
     while True:
@@ -322,10 +329,12 @@ def give_info():
             return
 
         else:
+            print("- Unknown command. Use Y or N.")
             continue
 
 
 def menu():
+    """Ask for the operation until asked to quit."""
     while True:
         choice = input("Encrypt (E) / Decrypt (D) / Info (I) / Quit (Q): ")
 
@@ -343,7 +352,7 @@ def menu():
             break
 
         else:
-            print("- Unknown command. Use E, D or Q.\n")
+            print("- Unknown command. Use E, D, I or Q.\n")
 
 
 def main():
