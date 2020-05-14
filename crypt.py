@@ -1,32 +1,32 @@
 # decei - Viestin salaus kuvan pikseleitä muuttamalla
-# versio 2.0 - imageio
+# versio 3.0 - imageio, olio
 
-# 12.5.2020
-# Kryptaus ok, kestää pitkään, rajoita kuvan kokoa?
-# Toimiva ohjelma, salaa pitkään
+# 13.5.2020
+# Kryptaus ok, kestää pitkään
+# TODO : RuntimeWarning kun väärä kuvapari
 
 
 import string
-from copy import copy
-from helps import setup_io, change_pix, save_new
 import os
 import imageio
 import numpy
 from PIL import Image
 
 
+# Creation of lists of the characters and corresponding
+# binary codes and the INFO-texts.
 ALPH = list(string.ascii_lowercase)
 for z in range(0, 10):
     ALPH.append(str(z))
 ALPH.extend([" ", ",", ".", ":", "(", ")", "ä", "ö"])
 X = ['000', '001', '010', '011', '100', '101', '110', '111']
 Z = []
-for y in X[:7]:
-    for x in X[1:]:
-        Z.append([x, y])
+for x2 in X[:7]:
+    for x1 in X[1:]:
+        Z.append([x1, x2])
 del Z[44:]
-INFO = "- Program encrypts (E) a message into a selected image and creates\n" \
-       "  a new image with the message. You can also decrypt (D) an existing\n" \
+INFO = "- Program encrypts a message into a selected image and creates\n" \
+       "  a new image with the message. You can also decrypt an existing\n" \
        "  message from an image if you have the original image as well.\n" \
        "  Quit by entering 'Q' or 'q'.\n"
 INFO2 = "- Legal characters are basic alphabets, numbers, white space and\n" \
@@ -38,44 +38,76 @@ INFO2 = "- Legal characters are basic alphabets, numbers, white space and\n" \
         "- After successful decryption, program deletes the encrypted image.\n"
 
 
-def read_pic_io(vrs):
-    if vrs == 1:
-        pic_name = input("Write the name of the image to be encrypted: ")
-    elif vrs == 2:
-        pic_name = input("Write the name of the image to be decrypted: ")
-    else:
-        pic_name = input("Write the name of the original image: ")
+class Picture:
+    """Class either reads or writes an image and returns information of it."""
 
-    try:
-        if pic_name.endswith('.jpeg') or pic_name.endswith('.jpg'):
-            pic = Image.open(pic_name)
-            parts = pic_name.split('.')
-            pic_name = parts[0] + '.png'
-            print("Converting into a PNG-image...")
-            pic.save(pic_name)
-            pic.close()
+    def __init__(self, version, pixels):
+        self.__name = ""
+        self.__pixels = numpy.empty(0)
+        self.ask_name(version)
 
-        pic = imageio.imread(pic_name)      # TODO
+        if version == 4:
+            self.__pixels = pixels
+            self.write_image()
+        else:
+            self.open_image()
 
-        if vrs == 2:
-            return pic, pic_name
+    def ask_name(self, vrs):
+        """Ask name for the image and set it to self.__name."""
+        if vrs == 1:
+            pic_name = input("Write the name of the image to be encrypted: ")
+        elif vrs == 2:
+            pic_name = input("Write the name of the image to be decrypted: ")
+        elif vrs == 3:
+            pic_name = input("Write the name of the original image: ")
+        else:
+            pic_name = input("Write the name of the new image: ")
 
-        return pic
+        if pic_name == "" or pic_name == " ":
+            self.ask_name(vrs)
 
-    except FileNotFoundError:
-        print("- File not found.")
-        return None
+        self.__name = pic_name
 
+    def open_image(self):
+        """Read given image and save data to self.__pixels."""
+        try:
+            if self.__name.endswith('.jpeg') or self.__name.endswith('.jpg'):
 
-def setup_io(vrs):
-    if vrs == 2:
-        [pic, pic_name] = read_pic_io(vrs)
-    else:
-        pic = read_pic_io(vrs)
+                pic = Image.open(self.__name)
+                parts = self.__name.split('.')
+                self.__name = parts[0] + '.png'
+                print("Converting into a PNG-image...")
+                pic.save(self.__name)
+                pic.close()
 
-    try:
-        height = int(pic.shape[0])
-        width = int(pic.shape[1])
+            self.__pixels = imageio.imread(self.__name)
+
+        except (ValueError, FileNotFoundError):
+            print("- File not found.")
+            self.__pixels = None
+
+    def write_image(self):
+        """Write new image from the existing data."""
+        if not self.__name.endswith('.png'):
+            print("Sorry, giving you a PNG-version...")
+            parts = self.__name.split('.')
+            self.__name = parts[0] + '.png'
+
+        print("Encrypting...")
+        imageio.imwrite(self.__name, self.__pixels)
+
+    def get_data(self):
+        """Return pixel data (numpy.array)."""
+        return self.__pixels
+
+    def get_name(self):
+        """Return name of the image (str)."""
+        return self.__name
+
+    def get_x_y(self):
+        """Return lists of the coordinates of the wanted pixels ([int])."""
+        height = int(self.__pixels.shape[0])
+        width = int(self.__pixels.shape[1])
 
         pixels_x = []
         pixels_y = []
@@ -89,49 +121,37 @@ def setup_io(vrs):
             pixels_y.append(py)
             py += 50
 
-        if vrs == 1:
-            return pic, pixels_x, pixels_y
+        return pixels_x, pixels_y
 
-        elif vrs == 2:
-            return pic, pixels_x, pixels_y, pic_name
+    def exist(self):
+        """Check if Picture-object has any pixel data (bool)."""
+        if self.__pixels is None:
+            return False
+        else:
+            return True
 
-        elif vrs == 3:
-            return pic
-
-    except AttributeError:
-        raise TypeError
-
-
-def change_pix(pic, px, py, binx):
-    col_list = pic[px, py]
-
-    for j in range(3):
-        col_list[j] += int(binx[j])
-
-    return numpy.array(col_list)
+    def delete(self):
+        """Delete the Picture-object."""
+        del self
 
 
-def save_new(new_pic):
-    new_pic_name = ""
-
-    while new_pic_name == "" or new_pic_name == " ":
-        new_pic_name = input("Write the name of the new image: ")
-
-    if not new_pic_name.endswith('.png'):
-        parts = new_pic_name.split('.')
-        new_pic_name = parts[0] + '.png'
-
-    print("Encrypting...")
-    imageio.imwrite(new_pic_name, new_pic)
-
-
-# Muuta yksittäinen merkki listaksi ['xxx', 'xxx']
 def to_code(char):
+    """Convert the given character to corresponding binary code ([str])."""
     ix = ALPH.index(char)
     return Z[ix]
 
 
-# Pyydä ja käännä haluttu viesti, palauta käännetty lista
+def to_text(bin_list):
+    """Convert the given binary code to corresponding character (str)."""
+    bin_1 = bin_list[0]
+    bin_2 = bin_list[1]
+    try:
+        return ALPH[Z.index([bin_1, bin_2])]
+    except ValueError:
+        print("- Decryption failure. Wrong decryption code or image pair.\n")
+        return "?"
+
+
 def get_msg():
     msg = input("Write the message to be encrypted: ")
 
@@ -153,119 +173,126 @@ def get_msg():
     return encrypted
 
 
-# Muuttaa annetun listan ['xxx', 'xxx'] yksittäiseksi merkiksi
-def to_text(bin_list):
-    bin_1 = bin_list[0]
-    bin_2 = bin_list[1]
-    for b in Z:
-        if bin_1 == b[0]:
-            if bin_2 == b[1]:
-                index_bin = Z.index([bin_1, bin_2])
-                return ALPH[index_bin]
-    print("- Decryption failure. Wrong decryption code or image pair.\n")
-    return "?"
-
-
-# Vertaa pikselien eroa ja palauttaa vastaavan merkin
-def compare(enc_pic, og_pic, px, py):
-    pxl_1_enc = list(enc_pic[px, py])
-    pxl_1_og = list(og_pic[px, py])
-
-    if pxl_1_enc == pxl_1_og:
-        charx = ""
-
+def are_same(og, enc):
+    if og.get_name() == enc.get_name():
+        print("- The encrypted/decrypted image can't be the same as "
+              "the original.")
+        return True
     else:
-        pxl_1 = ""
-        for j in range(3):
-            diff_1 = pxl_1_enc[j] - pxl_1_og[j]
-            pxl_1 += str(diff_1)
-
-        pxl_2_enc = list(enc_pic[px + 1, py])
-        pxl_2_og = list(og_pic[px + 1, py])
-
-        if pxl_2_enc == pxl_2_og:
-            pxl_2 = '000'
-
-        else:
-            pxl_2 = ""
-            for k in range(3):
-                diff_2 = pxl_2_enc[k] - pxl_2_og[k]
-                pxl_2 += str(diff_2)
-
-        charx = to_text([pxl_1, pxl_2])
-
-    return charx
+        return False
 
 
-# Salaa viesti
+def change_pix(pix, binx):
+    col_list = list(pix)
+
+    for j in range(3):
+        col_list[j] += int(binx[j])
+
+    return numpy.array(col_list)
+
+
 def encrypt():
-    # Pyydetään salattava teksti ja muutetaan binäärimuotoon
     encrypted = []
     while True and not encrypted:
         encrypted = get_msg()
 
     while True:
-        # Luodaan kuva ja listat pikseleistä, joita muokataan
-        try:
-            [pic, pic_xs, pic_ys] = setup_io(1)
-            new_pic = copy(pic)
+        pic = Picture(1, None)
+
+        if not pic.exist():
+            pic.delete()
+            continue
+
+        [pic_xs, pic_ys] = pic.get_x_y()
+        new_pic_pix = pic.get_data()
+
+        done = False
+
+        for j in pic_ys:
+            for i in pic_xs:
+                bin_1 = encrypted[0][0]
+                bin_2 = encrypted[0][1]
+
+                new_pic_pix[i, j] = change_pix(new_pic_pix[i, j], bin_1)
+
+                if bin_2 != '000':
+                    new_pic_pix[i + 1, j] = change_pix(new_pic_pix[i + 1, j],
+                                                       bin_2)
+
+                del encrypted[0]
+
+                if len(encrypted) == 0:
+                    done = True
+                    break
+
+            if done:
+                break
+
+        new_pic = Picture(4, new_pic_pix)
+
+        while are_same(pic, new_pic):
+            new_pic = Picture(4, new_pic)
+
+        print("- Encryption success. To be found from ", new_pic.get_name()
+              , ".\n", sep="")
+
+        pic.delete()
+        new_pic.delete()
+        return
+
+
+def compare(enc_pix, og_pix):
+    pxl_enc = list(enc_pix)
+    pxl_og = list(og_pix)
+
+    if pxl_enc == pxl_og:
+        pxl_str = "000"
+
+    else:
+        pxl_str = ""
+        for j in range(3):
+            diff = int(pxl_enc[j]) - int(pxl_og[j])
+            pxl_str += str(diff)
+
+    return pxl_str
+
+
+def decrypt():
+    msg = ""
+    while True:
+        enc_pic = Picture(2, None)
+
+        if not enc_pic.exist():
+            enc_pic.delete()
+            continue
+
+        while True:
+            og_pic = Picture(3, None)
+
+            if not og_pic.exist() or are_same(og_pic, enc_pic):
+                og_pic.delete()
+                continue
 
             done = False
+
+            [pic_xs, pic_ys] = enc_pic.get_x_y()
+            enc_pix = enc_pic.get_data()
+            og_pix = og_pic.get_data()
+
+            print("Decrypting...")
 
             for j in pic_ys:
                 for i in pic_xs:
-                    binx = encrypted[0]
-                    bin_1 = binx[0]
-                    bin_2 = binx[1]
+                    px_1 = compare(enc_pix[i, j], og_pix[i, j])
 
-                    new_pic[i, j] = change_pix(pic, i, j, bin_1)
-
-                    if bin_2 != '000':
-                        new_pic[i + 1, j] = change_pix(pic, i + 1, j, bin_2)
-
-                    del encrypted[0]
-
-                    if len(encrypted) == 0:
-                        done = True
-                        break
-                if done:
-                    break
-
-            # Luodaan ja tallennetaan uusi kuva
-            save_new(new_pic)
-            print("- Encryption success.\n")
-            return
-
-        except TypeError:
-            continue
-        except ValueError:
-            continue
-
-
-# Pura salaus
-def decrypt():
-    msg = ""
-    ok = False
-
-    while True:
-        try:
-            if not ok:
-                [enc_pic, xs, ys, pic_name] = setup_io(2)
-            ok = True
-            og_pic = setup_io(3)
-
-            done = False
-            print("Decrypting...")
-
-            for pix_y in ys:
-                for pix_x in xs:
-                    charx = compare(enc_pic, og_pic, pix_x, pix_y)
-
-                    if charx == "":
+                    if px_1 == "000":
                         done = True
                         break
 
-                    elif charx == "?":
+                    px_2 = compare(enc_pix[i + 1, j], og_pix[i + 1, j])
+
+                    charx = to_text([px_1, px_2])
+                    if charx == "?":
                         return
 
                     msg += charx
@@ -273,15 +300,12 @@ def decrypt():
                 if done:
                     break
 
+            os.remove(enc_pic.get_name())
+            enc_pic.delete()
+            og_pic.delete()
             print("The decrypted message:\n", msg, sep="")
-            os.remove(pic_name)
             print("- Decryption success.\n")
             return
-
-        except TypeError:
-            continue
-        except ValueError:
-            continue
 
 
 def give_info():

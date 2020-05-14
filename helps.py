@@ -3,6 +3,9 @@ import numpy
 from PIL import Image
 
 
+# Contains all the functions the 3.0-version is able to run without.
+
+
 def read_pic_io(vrs):
     if vrs == 1:
         pic_name = input("Write the name of the image to be encrypted: ")
@@ -44,15 +47,15 @@ def setup_io(vrs):
 
         pixels_x = []
         pixels_y = []
-        x = 0
-        y = 0
+        px = 0
+        py = 0
 
-        while x < width - 1:
-            pixels_x.append(x)
-            x += 50
-        while y < height:
-            pixels_y.append(y)
-            y += 50
+        while px < width - 1:
+            pixels_x.append(px)
+            px += 50
+        while py < height:
+            pixels_y.append(py)
+            py += 50
 
         if vrs == 1:
             return pic, pixels_x, pixels_y
@@ -76,8 +79,12 @@ def change_pix(pic, px, py, binx):
     return numpy.array(col_list)
 
 
-def save_new(new_pic):
-    new_pic_name = input("Write the name of the new image: ")
+def make_new(new_pic):
+    new_pic_name = ""
+
+    while new_pic_name == "" or new_pic_name == " ":
+        new_pic_name = input("Write the name of the new image: ")
+
     if not new_pic_name.endswith('.png'):
         parts = new_pic_name.split('.')
         new_pic_name = parts[0] + '.png'
