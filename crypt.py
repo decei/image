@@ -1,8 +1,8 @@
-# decei - Encryption / decryption of a meesage by changing the pixels.
+# decei - Encryption / decryption of a message by changing the pixels.
 # Version 3.1 - imageio, objects, processed pixels to landscape
 
 # 14.5.2020
-# Encrypting quite time consuming
+# Encrypting quite time consuming due to high quality
 # Set a quality limit for the image?
 
 import string
