@@ -1,5 +1,5 @@
 # decei - Encryption / decryption of a meesage by changing the pixels.
-# Version 3.0 - imageio, objects
+# Version 3.1 - imageio, objects, pixels to landscape
 
 # 14.5.2020
 # Encrypting quite time consuming
@@ -229,10 +229,10 @@ def encrypt():
                 bin_1 = encrypted[0][0]
                 bin_2 = encrypted[0][1]
 
-                new_pic_pix[i, j] = change_pix(new_pic_pix[i, j], bin_1)
+                new_pic_pix[j, i] = change_pix(new_pic_pix[j, i], bin_1)
 
                 if bin_2 != '000':
-                    new_pic_pix[i + 1, j] = change_pix(new_pic_pix[i + 1, j],
+                    new_pic_pix[j, i + 1] = change_pix(new_pic_pix[j, i + 1],
                                                        bin_2)
 
                 del encrypted[0]
@@ -283,13 +283,13 @@ def decrypt():
 
             for j in pic_ys:
                 for i in pic_xs:
-                    px_1 = compare(enc_pix[i, j], og_pix[i, j])
+                    px_1 = compare(enc_pix[j, i], og_pix[j, i])
 
                     if px_1 == "000":
                         done = True
                         break
 
-                    px_2 = compare(enc_pix[i + 1, j], og_pix[i + 1, j])
+                    px_2 = compare(enc_pix[j, i + 1], og_pix[j, i + 1])
 
                     charx = to_text([px_1, px_2])
                     if charx == "?":
