@@ -172,7 +172,7 @@ def encrypt():
     i = 0
 
     while j <= height and not done:
-        while i < width and not done:
+        while i + 1 < width and not done:
 
             bin_1 = encrypted[0][0]
             bin_2 = encrypted[0][1]
@@ -217,7 +217,7 @@ def decrypt():
     j = 0
 
     while j <= height and not done:
-        while i < width and not done:
+        while i + 1 < width and not done:
 
             px_1 = to_str(list(dec_pix[j, i]))
 
